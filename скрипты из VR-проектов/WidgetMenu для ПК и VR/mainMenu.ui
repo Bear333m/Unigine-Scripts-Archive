@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ui version="1.0">
+    <vbox name="vbox" background="1" align="overlap">
+        <tabbox name="tabBox" background="1">
+            <tab>
+                <text> Основные функции </text>
+                <vbox name="main" background="1" align="expand" space="10">
+                    <button name="initialButton" background="1" align="expand">
+                        <text>Вернуть предметы обратно</text>
+                    </button>
+                    <button name="rayButton" background="1" align="expand">
+                        <text>Скрыть луч</text>
+                    </button>
+                    <button name="movingAll" background="1" align="expand">
+                        <text>Переместить всю модель</text>
+                    </button>
+                    <button name="startAnimation" background="1" align="expand">
+                        <text>Запуск анимации</text>
+                    </button>
+                    <button name="stopAnimation" background="1" align="expand">
+                        <text>Остановка анимации</text>
+                    </button>
+                    <button name="reverseAnimation" background="1" align="expand">
+                        <text>Обратная анимация</text>
+                    </button>
+                </vbox>
+            </tab>
+            <tab>
+                <text> Сведения о детали </text>
+                <vbox name="detailInfo" background="1" align="expand">
+                    <label name="detailNameLabel" background="1" align="expand">
+                        <text></text>
+                    </label>
+                    <label name="detailInfoLabel" background="1" align="expand" wrap="1" space="10">
+                        <text wrap="1"></text>
+                    </label>
+                </vbox>
+            </tab>
+        </tabbox>
+    </vbox>
+</ui>
