@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui version="1.0">
+    <vbox align="overlap,center" name="mainMenu" width="246" height="397">
+        <sprite name="Background" align="overlap" pos_x="0" pos_y="0" width="246" height="397" texture="data/all scripts/menu/gui/background_menu.png"/>
+        <sprite name="BtnWorldMenu1" align="overlap" pos_x="31" pos_y="21" width="185" height="56" texcoord_w="0.5" texture="data/all scripts/menu/gui/button_menu1.png"/>
+        <sprite name="BtnWorldMenu2" align="overlap" pos_x="31" pos_y="96" width="185" height="56" texcoord_w="0.5" texture="data/all scripts/menu/gui/button_menu2.png"/>
+        <sprite name="BtnTest" align="overlap" pos_x="31" pos_y="172" width="185" height="56" texcoord_w="0.5" texture="data/all scripts/menu/gui/button_test.png"/>
+        <sprite name="BtnFullscreen" align="overlap" pos_x="31" pos_y="246" width="185" height="56" texcoord_w="0.5" texture="data/all scripts/menu/gui/button_screen.png"/>
+        <sprite name="BtnExit" align="overlap" pos_x="31" pos_y="323" width="185" height="56" texcoord_w="0.5" texture="data/all scripts/menu/gui/button_exit.png"/>
+    </vbox>
+</ui>
+
