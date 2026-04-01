@@ -1,0 +1,101 @@
+BaseMaterial <parent=Unigine::post var_prefix=var texture_prefix=tex>
+{
+	Option blend_src = none
+	Option blend_dest = none
+	
+	// Текстура экрана (наследуется от Unigine::post, но явно объявим для надёжности)
+	Texture2D screen_color <source=screen_color filter=bilinear wrap=clamp>
+    Texture2D aux <source=auxiliary filter=bilinear wrap=clamp>
+    Texture2D scene_depth <source=current_depth filter=point wrap=clamp>
+	
+	// Параметр цвета выделения контура (доступен в редакторе)
+	Group "Fill Style"
+	{
+		//Color fill_color = [1 1 1 1] <title="Fill Color" tooltip="Цвет заливки">
+		Slider fill_opacity = 1.0 <min=0.0 max=1.0 title="Fill Opacity" tooltip="Степень наложения цвета на материал">
+	}
+
+	Group "Outline Style"
+	{
+		Color outline_color = [1 1 1 1] <title="Outline Color" tooltip="Цвет обводки">
+		Slider outline_opacity = 1.0 <min=0.0 max=1.0 title="Color Intensity" tooltip="Степень влияния цвета заливки на цвет материала">
+		Slider outline_thickness = 3.0 <min=1.0 max=20.0 title="Outline Thickness (px)" tooltip="Толщина линии контура в пикселях">
+		Slider outline_ref_distance= 10.0 <min=1 max=100>
+		Slider outline_min_thickness= 1.0 <min=0 max=20>
+		Slider outline_max_thickness= 20.0 <min=0 max=50>
+	}
+	
+	Pass post
+	{
+		Fragment= #{
+			#include <core/materials/shaders/render/common.h>
+			
+			STRUCT_FRAG_BEGIN
+				INIT_COLOR(float4)
+			STRUCT_FRAG_END
+			
+			MAIN_FRAG_BEGIN(FRAGMENT_IN)
+				
+				// СТАРТОВЫЕ ЗНАЧЕНИЯ
+				float2 uv = IN_UV;
+				//float4 color = TEXTURE_BIAS_ZERO(tex_screen_color, uv); 
+				float4 color = TEXTURE_BIAS_ZERO(tex_color, uv); 
+				float4 auxiliary = TEXTURE_BIAS_ZERO(tex_aux, uv);
+				float4 var_fill_color = auxiliary;			//заменил цвет заливки из параметра шейдера на буфер Auxiliary
+				
+				// ВЫЧИСЛЕНИЕ ТОЛЩИНЫ ОБВОДКИ В ПИКСЕЛЯХ
+				// 1. Получаем линейную глубину для масштабирования по дистанции
+				float linear_depth = nativeDepthToLinearDepth(TEXTURE_OUT(tex_scene_depth), uv);
+				float distance_scale = var_outline_ref_distance / linear_depth;
+				
+				// 2. Базовая толщина в пикселях с масштабированием
+				float thickness_pixels = var_outline_thickness * distance_scale;
+				thickness_pixels = clamp(thickness_pixels, var_outline_min_thickness, var_outline_max_thickness);
+				
+				// 3. Конвертируем пиксели → UV-смещение
+				// s_viewport.zw = (1/width, 1/height)
+				float2 pixel_size = s_viewport.zw;
+				float2 offset = pixel_size * thickness_pixels;
+				
+				float offset_x = offset.x;
+				float offset_y = offset.y;
+				
+				// ВЫЧИСЛЕНИЕ ГРАНИЦЫ (дилатация через max + length для всех каналов)
+				float mask_center = length(auxiliary.rgb);
+				
+				float mask_up    = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(0, offset_y)).rgb);
+				float mask_down  = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(0, -offset_y)).rgb);
+				float mask_right = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(offset_x, 0)).rgb);
+				float mask_left  = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(-offset_x, 0)).rgb);
+				float mask_upright  = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(offset_x, offset_y)).rgb);
+				float mask_upleft   = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(-offset_x, offset_y)).rgb);
+				float mask_downright= length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(offset_x, -offset_y)).rgb);
+				float mask_downleft = length(TEXTURE_BIAS_ZERO(tex_aux, uv + float2(-offset_x, -offset_y)).rgb);
+				
+				// Дилатация: берём максимум из всех соседей
+				float mask_cross = max(mask_up, max(mask_down, max(mask_right, max(mask_left, 
+								   max(mask_upright, max(mask_upleft, max(mask_downright, mask_downleft)))))));
+				
+				// Контур = разница между расширенной маской и центром
+				float outline_mask = saturate(mask_cross - mask_center);
+				
+				float4 white = float4(1.0, 1.0, 1.0, 1.0);
+				
+				// Это граница (внешний край модели) — накладываем контур
+				if (outline_mask > 0.5) {
+					float4 result = lerp(white, var_outline_color, var_outline_opacity);
+					OUT_COLOR = lerp(color, result, outline_mask);
+				}
+				// Это тело модели (не граница) — применяем заливку
+				else if (mask_center > 0.5) {
+					OUT_COLOR = lerp(color, var_fill_color, var_fill_opacity);
+				}
+				// Это фон — оставляем как есть
+				else {
+					OUT_COLOR = color;
+				}
+				
+			MAIN_FRAG_END
+		#}
+	}
+}
